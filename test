@@ -1,0 +1,3 @@
+#!/bin/bash
+
+djangocms-helper essential_addons_dashboard --cms test --migrate --extra-settings=test_settings $@

@@ -1,0 +1,16 @@
+aldryn-apphooks-config
+coverage==3.7.1
+aldryn-reversion>=0.0.2
+aldryn-search
+backport_collections==0.1
+django-cms>=3.0.12
+django-parler
+django-reversion>=1.8.2,<1.9
+django-sekizai
+djangocms-admin-style
+djangocms-helper>=0.7
+djangocms_text_ckeditor
+flake8
+html5lib
+pyflakes
+six
