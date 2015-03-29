@@ -41,6 +41,9 @@ class ProcessWebhookView(CsrfExemptMixin, View):
             addon = Addon.objects.get(repo_slug=slug)
         except Addon.DoesNotExist:
             warnings.warn("Addon '{0}' isn't registered.".format(slug))
+            warnings.warn("Here's the request headers:")
+            for header, value in request.META.iteritems():
+                warnings.warn("{0}: {1}".format(header, value))
             pass
 
         if addon:
