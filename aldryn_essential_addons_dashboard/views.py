@@ -35,7 +35,8 @@ class ProcessWebhookView(CsrfExemptMixin, View):
     def get_job_python(self, job):
         """Given a single 'job' object, return the found Python."""
         if job['config'] and job['config']['python']:
-            return job['config']['python']
+            # json may convert '1.6' into a float, force a string.
+            return str(job['config']['python'])
         return None
 
     def get_max_python(self, matrix):
