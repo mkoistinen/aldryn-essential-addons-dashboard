@@ -12,6 +12,7 @@ from .models import Addon
 
 import warnings
 
+
 class CsrfExemptMixin(object):
     @classmethod
     def as_view(cls, **initkwargs):
@@ -24,13 +25,16 @@ class ProcessWebhookView(CsrfExemptMixin, View):
 
     def get_data(self, request):
         payload = request.POST.get('payload', None)
+
+        warnings.warn('#### Travis data follows...')
+        warnings.warn(payload)
+        warnings.warn('#### End Travis data. ####')
+
         return json.loads(payload) if payload else []
 
     def process_data(self, addon, data):
         # Do yo thang here.
-        warnings.warn('#### Travis data follows...')
-        warnings.warn(data)
-        warnings.warn('#### End Travis data.')
+        pass
 
     def post(self, request, *args, **kwargs):
         # TODO: See: http://docs.travis-ci.com/user/notifications/#Authorization-for-Webhooks
@@ -45,7 +49,6 @@ class ProcessWebhookView(CsrfExemptMixin, View):
             warnings.warn("Here's the request headers:")
             for header, value in request.META.iteritems():
                 warnings.warn("{0}: {1}".format(header, value))
-            pass
 
         if addon:
             data = self.get_data(request)
