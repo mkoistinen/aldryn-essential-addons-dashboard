@@ -7,8 +7,8 @@ REQUIREMENTS = [
     # 'aldryn-boilerplates',
     # 'aldryn-reversion>=0.0.2',
     # 'django-reversion>=1.8.2,<1.9',
-    # 'django>=1.6,<1.8',
     'django-versionfield3',
+    # 'django>=1.6,<1.8',
 ]
 
 CLASSIFIERS = [
