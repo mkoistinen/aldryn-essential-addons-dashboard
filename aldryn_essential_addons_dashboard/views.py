@@ -36,6 +36,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         # TODO: See: http://docs.travis-ci.com/user/notifications/#Authorization-for-Webhooks
         slug = request.META.get('Travis-Repo-Slug', None)
         auth = request.META.get('Authorization', None),
+        addon = None
         try:
             addon = Addon.objects.get(repo_slug=slug)
         except Addon.DoesNotExist:
