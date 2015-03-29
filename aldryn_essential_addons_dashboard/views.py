@@ -16,6 +16,7 @@ from .models import Addon
 
 import warnings
 
+ZERO = Version('0.0.0', DEFAULT_NUMBER_BITS)
 
 class CsrfExemptMixin(object):
     @classmethod
@@ -39,13 +40,14 @@ class ProcessWebhookView(CsrfExemptMixin, View):
 
     def get_max_python(self, matrix):
         """Returns the max. version of python in all the successful jobs."""
-        max_python = Version('0.0.0', DEFAULT_NUMBER_BITS)
+        max_python = ZERO
         for job in matrix:
             if job["state"] == "finished" and job["status"] == 0:
-                job_python = self.get_job_python(job)
+                job_python = Version(
+                    self.get_job_python(job), DEFAULT_NUMBER_BITS)
                 if job_python and job_python > max_python:
                     max_python = job_python
-        if max_python > Version('0.0.0'):
+        if max_python > ZERO:
             return max_python
         return None
 
@@ -58,18 +60,19 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         if job['config'] and job['config']['env']:
             grps = re.match(pattern, job['config']['env'])
             if grps:
-                return grps.groups['django']
+                return Version(grps.groups['django'], DEFAULT_NUMBER_BITS)
         return None
 
     def get_max_django(self, matrix):
         """Returns the max. version of django in all the successful jobs."""
-        max_django = Version('0.0.0', DEFAULT_NUMBER_BITS)
+        max_django = ZERO
         for job in matrix:
             if job['state'] == 'finished' and job['status'] == 0:
-                job_django = self.get_job_django(job)
+                job_django = Version(
+                    self.get_job_django(job), DEFAULT_NUMBER_BITS)
                 if job_django and job_django > max_django:
                     max_django = job_django
-        if max_django > Version('0.0.0'):
+        if max_django > ZERO:
             return max_django
         return None
 
