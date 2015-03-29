@@ -80,7 +80,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         if data['matrix']:
             addon.max_python_version = self.get_max_python(data['matrix'])
             addon.max_django_version = self.get_max_django(data['matrix'])
-            addon.build_passing = data['matrix']['status'] == 0
+            addon.build_passing = data['status'] == 0
             warnings.warn('Updating "{0}" with: {1}, {2}, {3}'.format(
                 addon,
                 addon.max_python_version,
