@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
 from versionfield.version import Version
+from versionfield.constants import DEFAULT_NUMBER_BITS
 
 from .models import Addon
 
@@ -38,7 +39,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
 
     def get_max_python(self, matrix):
         """Returns the max. version of python in all the successful jobs."""
-        max_python = Version('0.0.0')
+        max_python = Version('0.0.0', DEFAULT_NUMBER_BITS)
         for job in matrix:
             if job["state"] == "finished" and job["status"] == 0:
                 job_python = self.get_job_python(job)
@@ -62,7 +63,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
 
     def get_max_django(self, matrix):
         """Returns the max. version of django in all the successful jobs."""
-        max_django = Version('0.0.0')
+        max_django = Version('0.0.0', DEFAULT_NUMBER_BITS)
         for job in matrix:
             if job['state'] == 'finished' and job['status'] == 0:
                 job_django = self.get_job_django(job)
