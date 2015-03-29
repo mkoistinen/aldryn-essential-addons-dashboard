@@ -26,7 +26,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         payload = request.POST.get('payload', None)
         return json.loads(payload) if payload else []
 
-    def process_data(addon, data):
+    def process_data(self, addon, data):
         # Do yo thang here.
         warnings.warn('#### Travis data follows...')
         warnings.warn(data)
