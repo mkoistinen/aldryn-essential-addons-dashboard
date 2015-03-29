@@ -45,7 +45,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         for job in matrix:
             if job["state"] == "finished" and job["status"] == 0:
                 job_python = Version(
-                    self.get_job_python(job), DEFAULT_NUMBER_BITS)
+                    self.get_job_python(job, DEFAULT_NUMBER_BITS))
                 if job_python and job_python > max_python:
                     max_python = job_python
         if max_python > ZERO:
@@ -70,7 +70,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         for job in matrix:
             if job['state'] == 'finished' and job['status'] == 0:
                 job_django = Version(
-                    self.get_job_django(job), DEFAULT_NUMBER_BITS)
+                    self.get_job_django(job, DEFAULT_NUMBER_BITS))
                 if job_django and job_django > max_django:
                     max_django = job_django
         if max_django > ZERO:
