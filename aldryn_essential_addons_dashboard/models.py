@@ -69,4 +69,4 @@ class Addon(models.Model):
         verbose_name_plural = _('addons')
 
     def __str__(self):
-        return self.name
+        return self.repo_slug

@@ -3,10 +3,13 @@
 from __future__ import unicode_literals
 
 import json
+import re
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
+
+from versionfield.version import Version
 
 from .models import Addon
 
@@ -25,16 +28,60 @@ class ProcessWebhookView(CsrfExemptMixin, View):
 
     def get_data(self, request):
         payload = request.POST.get('payload', None)
-
-        warnings.warn('#### Travis data follows...')
-        warnings.warn(payload)
-        warnings.warn('#### End Travis data. ####')
-
         return json.loads(payload) if payload else []
 
+    def get_job_python(self, job):
+        """Given a single 'job' object, return the found Python."""
+        if job['config'] and job['config']['python']:
+            return job['config']['python']
+        return None
+
+    def get_max_python_success(self, matrix):
+        max_python = Version('0.0.0')
+        for job in matrix:
+            if job["state"] == "finished" and job["status"] == 0:
+                job_python = self.get_job_python(job)
+                if job_python and job_python > max_python:
+                    max_python = job_python
+        if max_python > Version('0.0.0'):
+            return max_python
+        return None
+
+    def get_job_django(self, job):
+        """
+        Given a single 'job' object, return the found Django. This one is a bit
+        trickier as we'll have to parse it out of the ENV.
+        """
+        pattern = re.compile('.*?django *= *(?<version>[0-9][0-9.]*).*?', re.I)
+        if job['config'] and job['config']['env']:
+            grps = re.match(pattern, job['config']['env'])
+            if grps:
+                return grps.groups['django']
+        return None
+
+    def get_max_django_success(self, matrix):
+        max_django = Version('0.0.0')
+        for job in matrix:
+            if job['state'] == 'finished' and job['status'] == 0:
+                job_django = self.get_job_django(job)
+                if job_django and job_django > max_django:
+                    max_django = job_django
+        if max_django > Version('0.0.0'):
+            return max_django
+        return None
+
     def process_data(self, addon, data):
-        # Do yo thang here.
-        pass
+        if data['matrix']:
+            addon.max_python_version = self.get_max_python(data['matrix'])
+            addon.max_django_version = self.get_max_django(data['matrix'])
+            addon.build_passing = data['matrix']['status'] == 0
+            warnings.warn('Updating "{0}" with: {1}, {2}, {3}'.format(
+                addon,
+                addon.max_python_version,
+                addon.max_django_version,
+                addon.build_passing,
+            ))
+            addon.save()
 
     def post(self, request, *args, **kwargs):
         # TODO: See: http://docs.travis-ci.com/user/notifications/#Authorization-for-Webhooks
@@ -45,10 +92,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         try:
             addon = Addon.objects.get(repo_slug=slug)
         except Addon.DoesNotExist:
-            warnings.warn("Addon '{0}' isn't registered.".format(slug))
-            warnings.warn("Here's the request headers:")
-            for header, value in request.META.iteritems():
-                warnings.warn("{0}: {1}".format(header, value))
+            pass
 
         if addon:
             data = self.get_data(request)
