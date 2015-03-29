@@ -10,6 +10,7 @@ from django.views.generic import View
 
 from .models import Addon
 
+import warnings
 
 class CsrfExemptMixin(object):
     @classmethod
@@ -27,7 +28,9 @@ class ProcessWebhookView(CsrfExemptMixin, View):
 
     def process_data(addon, data):
         # Do yo thang here.
-        print(data)
+        warnings.warn('#### Travis data follows...')
+        warnings.warn(data)
+        warnings.warn('#### End Travis data.')
 
     def post(self, request, *args, **kwargs):
         # TODO: See: http://docs.travis-ci.com/user/notifications/#Authorization-for-Webhooks
@@ -35,7 +38,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         auth = request.META.get('Authorization', None),
         try:
             addon = Addon.objects.get(repo_id=slug)
-        except Addon.ObjectNotFound:
+        except Addon.DoesNotExist:
             pass
 
         if addon:
