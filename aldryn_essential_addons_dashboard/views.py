@@ -36,7 +36,8 @@ class ProcessWebhookView(CsrfExemptMixin, View):
             return job['config']['python']
         return None
 
-    def get_max_python_success(self, matrix):
+    def get_max_python(self, matrix):
+        """Returns the max. version of python in all the successful jobs."""
         max_python = Version('0.0.0')
         for job in matrix:
             if job["state"] == "finished" and job["status"] == 0:
@@ -59,7 +60,8 @@ class ProcessWebhookView(CsrfExemptMixin, View):
                 return grps.groups['django']
         return None
 
-    def get_max_django_success(self, matrix):
+    def get_max_django(self, matrix):
+        """Returns the max. version of django in all the successful jobs."""
         max_django = Version('0.0.0')
         for job in matrix:
             if job['state'] == 'finished' and job['status'] == 0:
