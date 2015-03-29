@@ -37,8 +37,9 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         slug = request.META.get('Travis-Repo-Slug', None)
         auth = request.META.get('Authorization', None),
         try:
-            addon = Addon.objects.get(repo_id=slug)
+            addon = Addon.objects.get(repo_slug=slug)
         except Addon.DoesNotExist:
+            warnings.warn('Addon “{0}” isn’t registered.'.format(slug))
             pass
 
         if addon:
