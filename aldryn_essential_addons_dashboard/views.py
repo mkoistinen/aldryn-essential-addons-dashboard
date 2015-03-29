@@ -57,7 +57,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         Given a single 'job' object, return the found Django. This one is a bit
         trickier as we'll have to parse it out of the ENV.
         """
-        pattern = re.compile('.*?django *= *(?<version>[0-9][0-9.]*).*?', re.I)
+        pattern = re.compile('.*?django *= *(?P<version>[0-9][0-9.]*).*?', re.I)
         if job['config'] and job['config']['env']:
             grps = re.match(pattern, job['config']['env'])
             if grps:
