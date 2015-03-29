@@ -59,9 +59,9 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         """
         pattern = re.compile('.*?django *= *(?P<version>[0-9][0-9.]*).*?', re.I)
         if job['config'] and job['config']['env']:
-            grps = re.match(pattern, job['config']['env'])
-            if grps:
-                return Version(grps.groups['django'], DEFAULT_NUMBER_BITS)
+            match = re.match(pattern, job['config']['env'])
+            if match:
+                return Version(match.groups('django')[0], DEFAULT_NUMBER_BITS)
         return None
 
     def get_max_django(self, matrix):
