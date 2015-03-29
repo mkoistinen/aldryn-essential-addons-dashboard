@@ -21,8 +21,8 @@ class Migration(SchemaMigration):
         db.create_table(u'aldryn_essential_addons_dashboard_addon', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('name', self.gf('django.db.models.fields.CharField')(default=u'', max_length=255)),
-            ('package_name', self.gf('django.db.models.fields.CharField')(default=u'', max_length=255)),
-            ('repo_url', self.gf('django.db.models.fields.URLField')(default=u'', max_length=1024)),
+            ('repo_slug', self.gf('django.db.models.fields.CharField')(default=u'', unique=True, max_length=255)),
+            ('auth_digest', self.gf('django.db.models.fields.CharField')(max_length=64, blank=True)),
             ('open_source', self.gf('django.db.models.fields.BooleanField')(default=False)),
             ('published', self.gf('django.db.models.fields.BooleanField')(default=False)),
             ('version', self.gf('versionfield.VersionField')(blank=True)),
@@ -44,6 +44,7 @@ class Migration(SchemaMigration):
     models = {
         u'aldryn_essential_addons_dashboard.addon': {
             'Meta': {'object_name': 'Addon'},
+            'auth_digest': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
             'build_passing': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'dependencies': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "u'component_of'", 'blank': 'True', 'through': u"orm['aldryn_essential_addons_dashboard.Dependency']", 'to': u"orm['aldryn_essential_addons_dashboard.Addon']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -51,9 +52,8 @@ class Migration(SchemaMigration):
             'max_python_version': ('versionfield.VersionField', [], {'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'open_source': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'package_name': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'published': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'repo_url': ('django.db.models.fields.URLField', [], {'default': "u''", 'max_length': '1024'}),
+            'repo_slug': ('django.db.models.fields.CharField', [], {'default': "u''", 'unique': 'True', 'max_length': '255'}),
             'version': ('versionfield.VersionField', [], {'blank': 'True'})
         },
         u'aldryn_essential_addons_dashboard.dependency': {

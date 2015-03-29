@@ -32,19 +32,11 @@ class Addon(models.Model):
     name = models.CharField(_('name'), max_length=255, blank=False, default='',
         help_text=_('Can be anything but should be the official addon name.'))
 
-    package_name = models.CharField(_('package name'), max_length=255,
-        blank=False, default='',
-        help_text=_('This <b>must</b> match the package name Travis CI uses.'))
-
-    repo_id = models.CharField(max_length=255, blank=False, default='',
-        help_text=_('This <b>must</b> match the GitHub repo account/name. '
-                    'E.g., "divio/django-cms".'))
+    repo_slug = models.CharField(max_length=255, blank=False, default='',
+        unique=True, help_text=_('This <b>must</b> match the GitHub repo '
+        'account/name. E.g., "divio/django-cms".'))
 
     auth_digest = models.CharField(max_length=64, blank=True, editable=False)
-
-    repo_url = models.URLField(max_length=1024, blank=False, default='',
-        help_text=_('This <b>must</b> match the repo that uses Travis CI for '
-                    'this package.'))
 
     open_source = models.BooleanField(default=False,
         help_text=_('Check this box if the addon’s repo is open sourced.'))

@@ -8,6 +8,8 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
+from .models import Addon
+
 
 class CsrfExemptMixin(object):
     @classmethod
@@ -16,22 +18,30 @@ class CsrfExemptMixin(object):
         return csrf_exempt(view)
 
 
-class AuthenticateRequestMixin(object):
-    # TODO: See: http://docs.travis-ci.com/user/notifications/#Authorization-for-Webhooks
-    pass
-
-
-class ProcessWebhookView(CsrfExemptMixin, AuthenticateRequestMixin, View):
+class ProcessWebhookView(CsrfExemptMixin, View):
     http_method_names = ['post', 'get']
 
     def get_data(self, request):
         payload = request.POST.get('payload', None)
         return json.loads(payload) if payload else []
 
-    def post(self, request, *args, **kwargs):
-        data = self.get_data(request)
+    def process_data(addon, data):
         # Do yo thang here.
         print(data)
+
+    def post(self, request, *args, **kwargs):
+        # TODO: See: http://docs.travis-ci.com/user/notifications/#Authorization-for-Webhooks
+        slug = request.META.get('Travis-Repo-Slug', None)
+        auth = request.META.get('Authorization', None),
+        try:
+            addon = Addon.objects.get(repo_id=slug)
+        except Addon.ObjectNotFound:
+            pass
+
+        if addon:
+            data = self.get_data(request)
+            if data:
+                self.process_data(addon, data)
         return HttpResponse(status=200)
 
     def get(self, request, *args, **kwargs):

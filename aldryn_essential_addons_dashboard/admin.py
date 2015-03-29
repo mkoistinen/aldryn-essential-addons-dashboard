@@ -35,17 +35,17 @@ class AddonAdminForm(forms.ModelForm):
 
     class Meta:
         fields = [
-            'name', 'package_name', 'repo_id', 'token', 'repo_url',
-            'open_source', 'published', 'version', 'max_python_version',
-            'max_django_version', 'build_passing'
+            'name', 'repo_slug', 'token', 'open_source', 'published',
+            'version', 'max_python_version', 'max_django_version',
+            'build_passing'
         ]
 
     def save(self, commit=True):
         cleaned_data = super(AddonAdminForm, self).clean()
         token = cleaned_data.get('token')
-        repo_id = cleaned_data.get('repo_id')
-        if token and repo_id:
-            self.instance.auth_digest = sha256(repo_id + token).hexdigest()
+        repo_slug = cleaned_data.get('repo_slug')
+        if token and repo_slug:
+            self.instance.auth_digest = sha256(repo_slug + token).hexdigest()
             print('### Saving hash: {0}'.format(self.instance.auth_digest))
         return super(AddonAdminForm, self).save(commit=commit)
 
