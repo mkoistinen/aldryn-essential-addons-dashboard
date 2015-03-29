@@ -33,10 +33,14 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         return json.loads(payload) if payload else []
 
     def get_job_python(self, job):
-        """Given a single 'job' object, return the found Python."""
+        """
+        Given a single 'job' object, return the found Python.
+
+        Returns a Version object or None
+        """
         if job['config'] and job['config']['python']:
             # json may convert '1.6' into a float, force a string.
-            return str(job['config']['python'])
+            return Version(str(job['config']['python']), DEFAULT_NUMBER_BITS)
         return None
 
     def get_max_python(self, matrix):
@@ -44,8 +48,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         max_python = ZERO
         for job in matrix:
             if job["state"] == "finished" and job["status"] == 0:
-                job_python = Version(
-                    self.get_job_python(job, DEFAULT_NUMBER_BITS))
+                job_python = self.get_job_python(job)
                 if job_python and job_python > max_python:
                     max_python = job_python
         if max_python > ZERO:
@@ -56,6 +59,8 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         """
         Given a single 'job' object, return the found Django. This one is a bit
         trickier as we'll have to parse it out of the ENV.
+
+        Returns a Version object or None
         """
         pattern = re.compile('.*?django *= *(?P<version>[0-9][0-9.]*).*?', re.I)
         if job['config'] and job['config']['env']:
@@ -69,8 +74,7 @@ class ProcessWebhookView(CsrfExemptMixin, View):
         max_django = ZERO
         for job in matrix:
             if job['state'] == 'finished' and job['status'] == 0:
-                job_django = Version(
-                    self.get_job_django(job, DEFAULT_NUMBER_BITS))
+                job_django = self.get_job_django(job)
                 if job_django and job_django > max_django:
                     max_django = job_django
         if max_django > ZERO:
