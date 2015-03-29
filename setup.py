@@ -3,16 +3,11 @@ from setuptools import setup, find_packages
 from aldryn_essential_addons_dashboard import __version__
 
 REQUIREMENTS = [
-    'aldryn-apphooks-config>=0.1.4',
-    'aldryn-boilerplates',
-    'aldryn-reversion>=0.0.2',
-    'django-appdata>=0.1.4',
-    'django-cms>=3.0.12',
-    'django-parler',
-    'django-reversion>=1.8.2,<1.9',
-    'django>=1.6,<1.8',
-    'pytz',
-    'six',
+    # 'aldryn-apphooks-config>=0.1.4',
+    # 'aldryn-boilerplates',
+    # 'aldryn-reversion>=0.0.2',
+    # 'django-reversion>=1.8.2,<1.9',
+    # 'django>=1.6,<1.8',
     'django-versionfield3',
 ]
 

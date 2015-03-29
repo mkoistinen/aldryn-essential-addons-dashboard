@@ -1,0 +1,17 @@
+{
+    "name": "Aldryn Essential Addons Dashboard",
+    "description": "Experimental dashboard for addons",
+    "url": "https://github.com/mkoistinen/aldryn-essential-addons-dashboard",
+    "package-name": "aldryn_essential_addons_dashboard",
+    "installed-apps": [
+        // "aldryn-apphooks-config",
+        // "django-versionfield3",
+    ],
+    "author": {
+        "name": "Divio AG",
+        "url": "https://www.divio.ch"
+    },
+    "license": {
+        "name": "BSD"
+    }
+}
