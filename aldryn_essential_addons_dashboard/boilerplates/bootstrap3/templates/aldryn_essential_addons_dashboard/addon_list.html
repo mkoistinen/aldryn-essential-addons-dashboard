@@ -2,12 +2,14 @@
 {% load cms_tags i18n %}
 
 {% block essential_addons_dashboard_content %}
-    <div class="aldryn_essential_addons_dashboard-list">
-        {% for addon in object_list %}
-            {% include "aldryn_essential_addons_dashboard/includes/addon_card.html" %}
-        {% empty %}
-            <p class="well">{% trans "No addons available" %}</p>
-        {% endfor %}
+    <div class="row">
+        <div class="aldryn_essential_addons_dashboard-list row">
+            {% for addon in object_list %}
+                {% include "aldryn_essential_addons_dashboard/includes/addon_card.html" %}
+            {% empty %}
+                <p class="well">{% trans "No addons available" %}</p>
+            {% endfor %}
+        </div>
     </div>
 {% endblock %}
 

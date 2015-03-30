@@ -2,14 +2,19 @@
 {% load cms_tags i18n %}
 
 {% block essential_addons_dashboard_content %}
-    {% include "aldryn_essential_addons_dashboard/includes/addon_card.html" %}
-
-    <h2>Dependencies</h2>
-    <ul class="dependencies">
-        {% for dep in addon.dependencies.all %}
-            <li><a href="{{ dep.get_absolute_url }}">{{ dep.name }}</a></li>
-        {% endfor %}
-    </ul>
+    <div class="row">
+        {% include "aldryn_essential_addons_dashboard/includes/addon_card.html" %}
+        <div class="col-xs-24 col-sm-12">
+            <div class="panel panel-default panel-wrapper">
+                <div class="panel-heading"><h4>Dependencies</h4></div>
+                <div class="dependencies list-group">
+                {% for dep in addon.dependencies.all %}
+                    <a class="list-group-item" href="{{ dep.get_absolute_url }}">{{ dep.name }}</a>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block essential_addons_dashboard_footer %}

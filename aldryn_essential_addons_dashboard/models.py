@@ -49,7 +49,7 @@ class Addon(models.Model):
         help_text=_('Check this box if the addon is published in the Aldryn '
                     'Addon Marketplace.'))
 
-    version = VersionField(verbose_name=_('version'), blank=True,
+    version = VersionField(verbose_name=_('version'), blank=True, null=True,
         help_text=_('This will be populated automatically.'))
 
     # These store the latest /successfully tested/ versions of Python/Django
@@ -69,7 +69,7 @@ class Addon(models.Model):
         blank=True, null=True,
         help_text=_('This will be populated automatically.'))
 
-    build_passing = models.BooleanField(_('build passing?'), default='False',
+    build_passing = models.BooleanField(_('build passing?'), default=False,
         help_text=_('This will be populated automatically.'))
 
     dependencies = models.ManyToManyField('self', blank=True,
