@@ -17,9 +17,8 @@ from versionfield.constants import DEFAULT_NUMBER_BITS
 
 from .models import Addon
 
-import warnings
-
 ZERO = Version('0.0.0', DEFAULT_NUMBER_BITS)
+MAX  = Version('255.255.65535', DEFAULT_NUMBER_BITS)
 
 
 class CsrfExemptMixin(object):
@@ -44,7 +43,8 @@ class ProcessTravisWebhookView(CsrfExemptMixin, View):
 
     def get_data(self, request):
         payload = request.POST.get('payload', None)
-        return json.loads(payload) if payload else []
+        data = json.loads(payload) if payload else []
+        return data
 
     def get_job_python(self, job):
         """
@@ -52,22 +52,28 @@ class ProcessTravisWebhookView(CsrfExemptMixin, View):
 
         Returns a Version object or None
         """
-        if job['config'] and job['config']['python']:
+        if 'config' in job and 'python' in job['config']:
             # json may convert '1.6' into a float, force a string.
             return Version(str(job['config']['python']), DEFAULT_NUMBER_BITS)
         return None
 
-    def get_max_python(self, matrix):
+    def get_python_range(self, matrix):
         """Returns the max. version of python in all the successful jobs."""
         max_python = ZERO
+        min_python = MAX
+        job_python = None
         for job in matrix:
-            if job["state"] == "finished" and job["status"] == 0:
+            if ('state' in job and job['state'] == 'finished' and
+                    'status' in job and job['status'] == 0):
                 job_python = self.get_job_python(job)
-                if job_python and job_python > max_python:
-                    max_python = job_python
-        if max_python > ZERO:
-            return max_python
-        return None
+                if job_python:
+                    if int(job_python) > int(max_python):
+                        max_python = Version(str(job_python), DEFAULT_NUMBER_BITS)
+                    if int(job_python) < int(min_python):
+                        min_python = Version(str(job_python), DEFAULT_NUMBER_BITS)
+        if max_python == ZERO or min_python == MAX:
+            return (None, None)
+        return (min_python, max_python)
 
     def get_job_django(self, job):
         """
@@ -77,36 +83,42 @@ class ProcessTravisWebhookView(CsrfExemptMixin, View):
         Returns a Version object or None
         """
         pattern = re.compile('.*?django *= *(?P<version>[0-9][0-9.]*).*?', re.I)
-        if job['config'] and job['config']['env']:
+        if 'config' in job and job['config'] and 'env' in job['config']:
             match = re.match(pattern, job['config']['env'])
             if match:
                 return Version(match.groups('django')[0], DEFAULT_NUMBER_BITS)
         return None
 
-    def get_max_django(self, matrix):
+    def get_django_range(self, matrix):
         """Returns the max. version of django in all the successful jobs."""
         max_django = ZERO
+        min_django = MAX
         for job in matrix:
-            if job['state'] == 'finished' and job['status'] == 0:
+            if ('state' in job and job['state'] == 'finished'
+                    and job['status'] == 0):
                 job_django = self.get_job_django(job)
-                if job_django and job_django > max_django:
-                    max_django = job_django
-        if max_django > ZERO:
-            return max_django
-        return None
+                if job_django:
+                    if int(job_django) > int(max_django):
+                        max_django = Version(str(job_django), DEFAULT_NUMBER_BITS)
+                    if int(job_django) < int(min_django):
+                        min_django = Version(str(job_django), DEFAULT_NUMBER_BITS)
+        if max_django == ZERO or min_django == MAX:
+            return (None, None)
+        return (min_django, max_django)
 
     def process_data(self, addon, data):
-        if data and data['matrix']:
-            addon.last_webhook_timestamp = now()
-            addon.max_python_version = self.get_max_python(data['matrix'])
-            addon.max_django_version = self.get_max_django(data['matrix'])
-            addon.build_passing = data['status'] == 0
-            warnings.warn('Updating "{0}" with: {1}, {2}, {3}'.format(
-                addon,
-                addon.max_python_version,
-                addon.max_django_version,
-                addon.build_passing,
-            ))
+        if addon and data and 'matrix' in data:
+            right_now = now()
+            addon.last_webhook_timestamp = right_now
+            # Only modify the python/django versions when build was a success.
+            if 'status' in data and data['status'] == 0:
+                addon.build_passing = True
+                addon.last_successful_build = right_now
+                addon.min_python_version, addon.max_python_version = self.get_python_range(data['matrix'])
+                addon.min_django_version, addon.max_django_version = self.get_django_range(data['matrix'])
+            else:
+                addon.build_passing = False
+            addon.save()
         return
 
     def post(self, request, *args, **kwargs):
@@ -121,7 +133,7 @@ class ProcessTravisWebhookView(CsrfExemptMixin, View):
             # happen the first time the webhook fires and only if we haven't
             # already set the token ourselves.
             addon = Addon.objects.get(
-                Q(auth_digest=auth) | Q(auth_degest__isnull=True),
+                Q(auth_digest=auth) | Q(auth_digest='') | Q(auth_digest__isnull=True),
                 repo_slug=slug
             )
 
@@ -132,9 +144,8 @@ class ProcessTravisWebhookView(CsrfExemptMixin, View):
         except Addon.DoesNotExist:
             pass
 
-        if addon:
-            self.process_data(addon, self.get_data(request))
-            addon.save()
+        self.process_data(addon, self.get_data(request))
+
         return HttpResponse(status=200)
 
     def get(self, request, *args, **kwargs):
