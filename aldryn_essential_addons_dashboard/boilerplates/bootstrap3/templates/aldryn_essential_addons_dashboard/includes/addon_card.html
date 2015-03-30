@@ -1,0 +1,13 @@
+{% load i18n %}
+{% load url from future %}
+
+<div class="aldryn-essential-addons-dashboard-addon-card{% if addon.build_passing %} building{% else %} not-building{% endif %}">
+    <h2><a href="{{ addon.get_absolute_url }}">{{ addon.name }}</a></h2>
+    <div class="meta">
+        <p class="repo"><a href="https://github.com/{{ addon.repo_slug }}/" target="_blank">https://github.com/{{ addon.repo_slug }}/</a></p>
+        <p class="version">Version: {{ addon.version }}</p>
+        <p class="pythons">Python: {{ addon.min_python_version }}&mdash;{{ addon.max_python_version }}</p>
+        <p class="djangos">Django: {{ addon.min_django_version }}&mdash;{{ addon.max_django_version }}</p>
+        <p class="last-seen">Last Seen: {{ addon.last_webhook_timestamp|date:"DATETIME_FORMAT" }}</p>
+    </div>
+</div>

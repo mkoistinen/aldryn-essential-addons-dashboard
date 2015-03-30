@@ -1,0 +1,16 @@
+{% extends "aldryn_essential_addons_dashboard/fullwidth.html" %}
+{% load cms_tags i18n %}
+
+{% block essential_addons_dashboard_content %}
+    {% include "aldryn_essential_addons_dashboard/includes/addon_card.html" %}
+
+    <h2>Dependencies</h2>
+    <ul class="dependencies">
+        {% for dep in addon.dependencies.all %}
+            <li><a href="{{ dep.get_absolute_url }}">{{ dep.name }}</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}
+
+{% block essential_addons_dashboard_footer %}
+{% endblock %}

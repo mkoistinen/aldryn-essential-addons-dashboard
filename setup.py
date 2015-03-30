@@ -3,12 +3,8 @@ from setuptools import setup, find_packages
 from aldryn_essential_addons_dashboard import __version__
 
 REQUIREMENTS = [
-    # 'aldryn-apphooks-config>=0.1.4',
-    # 'aldryn-boilerplates',
-    # 'aldryn-reversion>=0.0.2',
-    # 'django-reversion>=1.8.2,<1.9',
+    'aldryn-boilerplates',
     'django-versionfield3',
-    # 'django>=1.6,<1.8',
 ]
 
 CLASSIFIERS = [

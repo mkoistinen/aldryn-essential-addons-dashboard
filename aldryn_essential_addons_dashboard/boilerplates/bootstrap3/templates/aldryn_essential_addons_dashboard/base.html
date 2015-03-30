@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load i18n cms_tags %}
+
+{% block extend_breadcrumb %}
+    {{ block.super }}
+    {% block essential_addons_dashboard_breadcrumb %}{% endblock essential_addons_dashboard_breadcrumb %}
+{% endblock extend_breadcrumb %}
+
+{% block content %}
+{% endblock content %}

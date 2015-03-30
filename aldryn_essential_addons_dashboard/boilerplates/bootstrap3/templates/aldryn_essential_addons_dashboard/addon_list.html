@@ -1,0 +1,18 @@
+{% extends "aldryn_essential_addons_dashboard/fullwidth.html" %}
+{% load cms_tags i18n %}
+
+{% block essential_addons_dashboard_content %}
+    <div class="aldryn_essential_addons_dashboard-list">
+        {% for addon in object_list %}
+            {% include "aldryn_essential_addons_dashboard/includes/addon_card.html" %}
+        {% empty %}
+            <p class="well">{% trans "No addons available" %}</p>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block essential_addons_dashboard_footer %}
+    <div class="aldryn_essential_addons_dashboard-pagination">
+        {% include "aldryn_essential_addons_dashboard/includes/pagination.html" %}
+    </div>
+{% endblock %}
