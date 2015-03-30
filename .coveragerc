@@ -1,0 +1,18 @@
+[run]
+branch = True
+source = aldryn_essential_addons_dashboard
+omit =
+    aldryn_essential_addons_dashboard/south_migrations/*
+    aldryn_essential_addons_dashboard/migrations/*
+    aldryn_essential_addons_dashboard/tests/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:

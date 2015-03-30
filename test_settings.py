@@ -2,18 +2,14 @@
 # -*- coding: utf-8 -*-
 
 HELPER_SETTINGS = {
+    'ROOT_URLCONF': 'aldryn_essential_addons_dashboard.tests.urls',
     'TIME_ZONE': 'Europe/Zurich',
     'LANGUAGES': (
         ('en', 'English'),
     ),
     'INSTALLED_APPS': [
-        'aldryn_apphooks_config',
         'aldryn_boilerplates',
-        'aldryn_newsblog',
-        'aldryn_reversion',
-        'djangocms_text_ckeditor',
-        'parler',
-        'reversion',
+        'aldryn_essential_addons_dashboard',
         'versionfield',
         'south',
     ],
@@ -30,24 +26,12 @@ HELPER_SETTINGS = {
         'django.template.loaders.app_directories.Loader',
     ],
     'ALDRYN_BOILERPLATE_NAME': 'bootstrap3',
-    # app-specific
-    'PARLER_LANGUAGES': {
-        1: (
-            {'code': 'en', },
-        ),
-        'default': {
-            'hide_untranslated': False,
-        }
-    },
-    'MIGRATION_MODULES': {
-        'djangocms_text_ckeditor': 'djangocms_text_ckeditor.migrations_django',
-    },
 }
 
 
 def run():
     from djangocms_helper import runner
-    runner.cms('essential_addons_dashboard')
+    runner.cms('aldryn_essential_addons_dashboard')
 
 if __name__ == "__main__":
     run()
