@@ -1,7 +1,8 @@
 {
     "package-name": "aldryn_essential_addons_dashboard",
     "installed-apps": [
-        "aldryn_boilerplates"
+        "aldryn_boilerplates",
+        "aldryn_essential_addons_dashboard"
     ],
     "author": {
         "name": "Divio AG",
