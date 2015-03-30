@@ -76,6 +76,9 @@ class Addon(models.Model):
         verbose_name=_('dependencies'), through='Dependency',
         symmetrical=False, related_name='component_of')
 
+    last_successful_build = models.DateTimeField(
+        _('last successful build'), null=True, editable=False)
+
     last_webhook_timestamp = models.DateTimeField(
         _('last webhook date'), null=True, editable=False)
 
