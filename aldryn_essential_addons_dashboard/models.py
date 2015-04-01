@@ -49,6 +49,9 @@ class Addon(models.Model):
         help_text=_('Check this box if the addon is published in the Aldryn '
                     'Addon Marketplace.'))
 
+    featured = models.BooleanField(default=False,
+        help_text=_('Check this box if this is an “essential addon”.'))
+
     version = VersionField(verbose_name=_('version'), blank=True, null=True,
         help_text=_('This will be populated automatically.'))
 

@@ -23,8 +23,8 @@ class DependencyAdmin(admin.TabularInline):
                 kwargs["queryset"] = Addon.objects.exclude(id=parent_obj_id)
             except IndexError:
                 pass
-        return super(
-            DependencyAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        return super(DependencyAdmin, self).formfield_for_foreignkey(
+            db_field, request, **kwargs)
 
 
 class AddonAdminForm(forms.ModelForm):
@@ -34,11 +34,10 @@ class AddonAdminForm(forms.ModelForm):
                     'originally setup this repo.'))
 
     class Meta:
-        fields = [
-            'name', 'repo_slug', 'token', 'open_source', 'published',
-            'version', 'max_python_version', 'max_django_version',
-            'build_passing'
-        ]
+        #
+        # How to stuff this field into the ModelAdmin's fieldset?!?!?
+        #
+        pass
 
     def save(self, commit=True):
         cleaned_data = super(AddonAdminForm, self).clean()
@@ -52,11 +51,34 @@ class AddonAdminForm(forms.ModelForm):
 
 class AddonAdmin(admin.ModelAdmin):
     form = AddonAdminForm
-    list_display = ('name', 'version', 'max_python_version',
-        'max_django_version', 'build_passing', 'published', 'open_source', )
     inlines = (DependencyAdmin, )
+    list_display = (
+        'name', 'version',
+        'featured', 'build_passing', 'published', 'open_source',
+    )
+    list_editable = ('featured', 'build_passing', 'published', 'open_source', )
     ordering = ('name', )
-    # list_editable = ('build_passing', 'published', 'open_source', )
+
+    fieldsets = [
+        (None, {
+            'fields': [
+                'name',
+                'repo_slug',
+                'featured',
+                ('open_source', 'published', ),
+                'version',
+            ]
+        }),
+        (_('Advanced'), {
+            'classes': ['collapse', ],
+            'fields': [
+                'token',
+                ('min_python_version', 'max_python_version', ),
+                ('min_django_version', 'max_django_version', ),
+                'build_passing',
+            ]
+        }),
+    ]
 
     def get_formsets(self, request, obj=None):
         """
