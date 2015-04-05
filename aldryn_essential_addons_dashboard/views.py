@@ -49,7 +49,7 @@ class WebhookViewBaseView(CsrfExemptMixin, View):
     service_name = '[unnamed service]'
 
     _json_data_cache = None
-    
+
     def log(self, log_type, msg):
         log_type = log_type.upper()
         if log_type not in ['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL']:
@@ -118,12 +118,12 @@ class WebhookViewBaseView(CsrfExemptMixin, View):
         """Primary entry point for the service webhook."""
         addon = self.get_addon(request)
         if addon:
-            self.log('INFO', 'Found addon: {0}'.format(addon.repo_slug))
+            self.log('INFO', 'Found addon: {0}'.format(addon))
             if not self.is_authentic(request, addon):
                 self.log('WARN', 'Did not authenticate for addon: {0}.'.format(addon))
                 self.write_log()
                 return HttpResponse('', status=401)
-    
+
             self.process_data(addon, self.get_json_data(request))
         else:
             self.log('WARN', 'No addon found.')
