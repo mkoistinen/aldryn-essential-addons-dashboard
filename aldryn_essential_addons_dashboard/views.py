@@ -133,16 +133,17 @@ class WebhookViewBaseView(CsrfExemptMixin, View):
 
     def get(self, request, *args, **kwargs):
         """Provides a human-friendly view of the endpoint with instruction."""
+        url = request.build_absolute_uri()
         return TemplateResponse(request,
             'aldryn_essential_addons_dashboard/url_ok.html', {
                 'service': self.service_name,
-                'webhook_url': request.build_absolute_uri(),
+                'webhook_url': url,
                 'config_example': """
                     ...
                     notifications:
                     webhooks: {0}
                     ...
-                """.format(request.build_absolute_url)
+                """.format(url)
             })
 
 
