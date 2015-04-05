@@ -370,8 +370,9 @@ class GitHubWebhookView(HeaderAuthenticationMixin, WebhookViewBaseView):
     def process_data(self, addon, data):
         right_now = now()
         if addon and data:
-            if 'release' in data:
-                tag_name = data['release']['tag_name']
+            if ('ref_type' in data and
+                    data['ref_type'] == 'tag' and 'ref' in data):
+                tag_name = data['ref']
                 try:
                     addon.version = Version(tag_name)
                 except:
