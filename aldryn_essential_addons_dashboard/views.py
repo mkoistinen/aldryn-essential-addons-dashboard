@@ -309,6 +309,21 @@ class TravisWebhookView(AddonFromHeaderMixin, HeaderAuthenticationMixin, Webhook
 
                 return ver_obj
 
+            else:
+                re.match(
+                    'TOX_ENV *=.*dj(?P<version>\d+)',
+                    job['config']['env'],
+                    re.I)
+                if match:
+                    ver_obj = None
+                    try:
+                        ver_num = int(ver_num)
+                        # OK, this is an int, probably something like 14 for 1.4,
+                        # etc. so, let's just divide by 10 and call it a day.
+                        ver_obj = Version(str(ver_num / 10), DEFAULT_BITS)
+                    except:
+                        pass
+                return ver_obj
             self.log('WARN', 'get_job_django() found no config in job: {0}.'.format(job_id))
 
         return None
