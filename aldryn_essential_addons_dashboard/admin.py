@@ -8,7 +8,15 @@ from django.utils.translation import ugettext_lazy as _
 
 from hashlib import sha256
 
-from .models import Addon, Dependency
+from .models import Addon, Dependency, PostLog
+
+
+class PostLogAdmin(admin.ModelAdmin):
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+admin.site.register(PostLog, PostLogAdmin)
 
 
 class DependencyAdmin(admin.TabularInline):
@@ -33,12 +41,6 @@ class AddonAdminForm(forms.ModelForm):
         help_text=_('This should be the Travis token for the account that '
                     'originally setup this repo.'))
 
-    class Meta:
-        #
-        # How to stuff this field into the ModelAdmin's fieldset?!?!?
-        #
-        pass
-
     def save(self, commit=True):
         cleaned_data = super(AddonAdminForm, self).clean()
         token = cleaned_data.get('token')
@@ -52,11 +54,13 @@ class AddonAdminForm(forms.ModelForm):
 class AddonAdmin(admin.ModelAdmin):
     form = AddonAdminForm
     inlines = (DependencyAdmin, )
+    actions = ['reset_addons', ]
     list_display = (
         'name', 'version',
-        'featured', 'build_passing', 'published', 'open_source',
+        # 'featured', 'build_passing', 'published', 'open_source',
     )
-    list_editable = ('featured', 'build_passing', 'published', 'open_source', )
+    # list_editable = ('featured', 'published', 'open_source', )
+    readonly_fields = ('last_successful_build', 'last_webhook_timestamp', )
     ordering = ('name', )
 
     fieldsets = [
@@ -76,9 +80,29 @@ class AddonAdmin(admin.ModelAdmin):
                 ('min_python_version', 'max_python_version', ),
                 ('min_django_version', 'max_django_version', ),
                 'build_passing',
+                'last_successful_build',
+                'last_webhook_timestamp',
             ]
         }),
     ]
+
+    def reset_addons(self, request, queryset):
+        rows_updated = queryset.update(
+            auth_digest='',
+            min_python_version=None,
+            max_python_version=None,
+            min_django_version=None,
+            max_django_version=None,
+            build_passing=False,
+            last_successful_build=None,
+            last_webhook_timestamp=None,
+        )
+        if rows_updated == 1:
+            message_bit = "1 addon was"
+        else:
+            message_bit = "%s addons were" % rows_updated
+        self.message_user(request, "%s successfully reset." % message_bit)
+    reset_addons.short_description = "Reset selected addons"
 
     def get_formsets(self, request, obj=None):
         """

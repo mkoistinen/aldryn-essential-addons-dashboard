@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 from django.conf.urls import patterns, url
 
-from .views import AddonDetailView, AddonListView, ProcessTravisWebhookView
+from .views import AddonDetailView, AddonListView, TravisWebhookView, GitHubWebhookView
 
 
 urlpatterns = patterns('',
@@ -12,8 +12,14 @@ urlpatterns = patterns('',
     # This is the Travis Webhook endpoint..
     url(
         r'^travis-endpoint/$',
-        ProcessTravisWebhookView.as_view(),
-        name='process-travis-webhook'
+        TravisWebhookView.as_view(),
+        name='process-travis-webhook',
+    ),
+
+    url(
+        r'^github-endpoint/$',
+        GitHubWebhookView.as_view(),
+        name='process-travis-webhook',
     ),
 
     url(

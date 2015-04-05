@@ -3,12 +3,9 @@
 
 {% block essential_addons_dashboard_content %}
     <h1>{% trans "Great! This is the correct URL." %}</h1>
-    <p>{% trans "Now, use this URL as the basis for your Travis config as follows:" %}</p>
+    <p>{% blocktrans with service=service %}Now, use this URL as the basis for your {{ service }} config as follows:{% endblocktrans %}</p>
     <pre>
-    ...
-    notifications:
-        webhooks: {{ request.build_absolute_uri }}
-    ...
+    {{ config_example }}
     </pre>
 {% endblock %}
 

@@ -1,14 +1,25 @@
-{% load i18n sekizai_tags %}
+{% load i18n cms_tags sekizai_tags %}
 {% load url from future %}
 
+{% addtoblock "css" %}
+<style>
+    .aldryn-essential-addons-dashboard-addon-card tr td:last-child { width: 100% }
+    .aldryn-essential-addons-dashboard-addon-card.panel-primary .panel-heading .fa,
+    .aldryn-essential-addons-dashboard-addon-card.panel-primary .panel-heading .glyphicon {
+        color: #fff;
+    }
+</style>
+{% endaddtoblock %}
+
 <div class="col-xs-24 col-sm-12">
-    <div class="aldryn-essential-addons-dashboard-addon-card panel panel-default panel-wrapper{% if addon.build_passing %} building{% else %} not-building{% endif %}">
-        <div class="panel-heading"><h4><a href="{{ addon.get_absolute_url }}">{{ addon.name }}</a></h4></div>
+    <div class="aldryn-essential-addons-dashboard-addon-card panel {% if addon.featured %}panel-primary{% else %}panel-info{% endif %} panel-wrapper{% if addon.build_passing %} building{% else %} not-building{% endif %}">
+
+        <div class="panel-heading"><h4>{% render_model addon 'name' %}{% if not detail %}  <a href="{{ addon.get_absolute_url }}"><span class="fa fa-link glyphicon glyphicon-share-alt"></span></a>{% endif %}</h4></div>
         <table class="table">
             <tr><td>Repository</td><td><a href="https://github.com/{{ addon.repo_slug }}/" target="_blank">{{ addon.repo_slug }}/</a></td></tr>
             <tr><td>Version</td><td>{{ addon.version }}</td></tr>
-            <tr><td>Python</td><td>{{ addon.min_python_version }}&mdash;{{ addon.max_python_version }}</td></tr>
-            <tr><td>Django</td><td>{{ addon.min_django_version }}&mdash;{{ addon.max_django_version }}</td></tr>
+            <tr{% if not addon.min_python_version or not addon.max_python_version %} class="danger"{% endif %}><td>Python</td><td>{{ addon.min_python_version }}&mdash;{{ addon.max_python_version }}</td></tr>
+            <tr{% if not addon.min_django_version or not addon.max_django_version %} class="danger"{% endif %}><td>Django</td><td>{{ addon.min_django_version }}&mdash;{{ addon.max_django_version }}</td></tr>
             <tr><td>Last Seen</td><td>{{ addon.last_webhook_timestamp|date:"DATETIME_FORMAT" }}</td></tr>
         </table>
     </div>

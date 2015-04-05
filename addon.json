@@ -3,12 +3,5 @@
     "installed-apps": [
         "aldryn_boilerplates",
         "aldryn_essential_addons_dashboard"
-    ],
-    "author": {
-        "name": "Divio AG",
-        "url": "https://www.divio.ch"
-    },
-    "license": {
-        "name": "BSD"
-    }
+    ]
 }

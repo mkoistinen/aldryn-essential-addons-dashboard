@@ -1,0 +1,36 @@
+== Info: Hostname was NOT found in DNS cache
+== Info:   Trying 46.237.127.177...
+== Info: Connected to www.google.com (46.237.127.177) port 80 (#0)
+=> Send header, 78 bytes (0x4e)
+0000: GET / HTTP/1.1
+0010: User-Agent: curl/7.37.1
+0029: Host: www.google.com
+003f: Accept: */*
+004c: 
+<= Recv header, 20 bytes (0x14)
+0000: HTTP/1.1 302 Found
+<= Recv header, 24 bytes (0x18)
+0000: Cache-Control: private
+<= Recv header, 40 bytes (0x28)
+0000: Content-Type: text/html; charset=UTF-8
+<= Recv header, 69 bytes (0x45)
+0000: Location: http://www.google.bg/?gfe_rd=cr&ei=nxwgVcXnFKGz8wefg4H
+0040: 4Dw
+<= Recv header, 21 bytes (0x15)
+0000: Content-Length: 258
+<= Recv header, 37 bytes (0x25)
+0000: Date: Sat, 04 Apr 2015 17:17:19 GMT
+== Info: Server GFE/2.0 is not blacklisted
+<= Recv header, 17 bytes (0x11)
+0000: Server: GFE/2.0
+<= Recv header, 35 bytes (0x23)
+0000: Alternate-Protocol: 80:quic,p=0.5
+<= Recv header, 2 bytes (0x2)
+0000: 
+<= Recv data, 258 bytes (0x102)
+0000: <HTML><HEAD><meta http-equiv="content-type" content="text/html;c
+0040: harset=utf-8">.<TITLE>302 Moved</TITLE></HEAD><BODY>.<H1>302 Mov
+0080: ed</H1>.The document has moved.<A HREF="http://www.google.bg/?gf
+00c0: e_rd=cr&amp;ei=nxwgVcXnFKGz8wefg4H4Dw">here</A>.
+00f2: </BODY></HTML>
+== Info: Connection #0 to host www.google.com left intact

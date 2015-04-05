@@ -11,6 +11,17 @@ from versionfield import VersionField
 
 
 @python_2_unicode_compatible
+class PostLog(models.Model):
+
+    details = models.TextField()
+    log_timestamp = models.DateTimeField(
+        _('last webhook date'), null=True, editable=False)
+
+    def __str__(self):
+        return "PostLog({0}) @ {1}".format(self.pk, self.log_timestamp)
+
+
+@python_2_unicode_compatible
 class Dependency(models.Model):
 
     addon = models.ForeignKey('aldryn_essential_addons_dashboard.Addon',
@@ -52,8 +63,7 @@ class Addon(models.Model):
     featured = models.BooleanField(default=False,
         help_text=_('Check this box if this is an “essential addon”.'))
 
-    version = VersionField(verbose_name=_('version'), blank=True, null=True,
-        help_text=_('This will be populated automatically.'))
+    version = VersionField(verbose_name=_('version'), blank=True, null=True)
 
     # These store the latest /successfully tested/ versions of Python/Django
     min_python_version = VersionField(verbose_name=_('min. Python version'),
@@ -80,14 +90,15 @@ class Addon(models.Model):
         symmetrical=False, related_name='component_of')
 
     last_successful_build = models.DateTimeField(
-        _('last successful build'), null=True, editable=False)
+        _('last successful build'), null=True)
 
     last_webhook_timestamp = models.DateTimeField(
-        _('last webhook date'), null=True, editable=False)
+        _('last webhook date'), null=True)
 
     class Meta:
         verbose_name = _('addon')
         verbose_name_plural = _('addons')
+        ordering = ['name', ]
 
     def get_absolute_url(self):
         try:

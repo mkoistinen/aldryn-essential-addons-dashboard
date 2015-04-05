@@ -16,14 +16,15 @@ class AddonMenu(CMSAttachMenu):
     name = _('Aldryn Essential Addons')
 
     def get_nodes(self, request):
-        nodes = [
-            NavigationNode(
-                'List',
-                reverse('aldryn_essential_addons_dashboard:addon-list'),
-                'addon-list'
-            ),
-            NavigationNode('----', '', ''),
-        ]
+        # nodes = [
+        #     NavigationNode(
+        #         'List',
+        #         reverse('aldryn_essential_addons_dashboard:addon-list'),
+        #         'addon-list'
+        #     ),
+        #     NavigationNode('----', '', ''),
+        # ]
+        nodes = []
 
         for addon in Addon.objects.all():
             node = NavigationNode(

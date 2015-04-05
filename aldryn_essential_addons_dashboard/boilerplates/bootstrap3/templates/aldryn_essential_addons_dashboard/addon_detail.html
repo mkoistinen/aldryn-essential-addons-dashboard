@@ -3,7 +3,7 @@
 
 {% block essential_addons_dashboard_content %}
     <div class="row">
-        {% include "aldryn_essential_addons_dashboard/includes/addon_card.html" %}
+        {% include "aldryn_essential_addons_dashboard/includes/addon_card.html" with detail=1 %}
         <div class="col-xs-24 col-sm-12">
             <div class="panel panel-default panel-wrapper">
                 <div class="panel-heading"><h4>Dependencies</h4></div>

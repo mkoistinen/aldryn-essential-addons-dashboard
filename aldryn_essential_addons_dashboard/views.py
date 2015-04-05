@@ -4,28 +4,26 @@ from __future__ import unicode_literals
 
 import json
 import re
+import warnings
 
+from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
 from django.template.response import TemplateResponse
+from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, View
 from django.utils.timezone import now
 
 from versionfield.version import Version
-from versionfield.constants import DEFAULT_NUMBER_BITS
+from versionfield.constants import DEFAULT_NUMBER_BITS as DEFAULT_BITS
 
-from .models import Addon
+from .models import Addon, PostLog
 
-ZERO = Version('0.0.0', DEFAULT_NUMBER_BITS)
-MAX  = Version('255.255.65535', DEFAULT_NUMBER_BITS)
+ZERO = Version('0.0.0', DEFAULT_BITS)
+MAX  = Version('255.255.65535', DEFAULT_BITS)
 
-
-class CsrfExemptMixin(object):
-    @classmethod
-    def as_view(cls, **initkwargs):
-        view = super(CsrfExemptMixin, cls).as_view(**initkwargs)
-        return csrf_exempt(view)
+DEBUG_POST = getattr(settings, 'ESSENTIAL_ADDONS_DASHBOARD_DEBUG_POST', False)
 
 
 class AddonListView(ListView):
@@ -38,23 +36,214 @@ class AddonDetailView(DetailView):
     model = Addon
 
 
-class ProcessTravisWebhookView(CsrfExemptMixin, View):
-    http_method_names = ['post', 'get']
+class CsrfExemptMixin(object):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(CsrfExemptMixin, self).dispatch(*args, **kwargs)
 
-    def get_data(self, request):
-        payload = request.POST.get('payload', None)
-        data = json.loads(payload) if payload else []
-        return data
+
+class WebhookViewBaseView(CsrfExemptMixin, View):
+    http_method_names = ['post', 'get']
+    post_log = []
+    payload_name = 'payload'
+    service_name = '[unnamed service]'
+
+    _json_data_cache = None
+    
+    def log(self, log_type, msg):
+        log_type = log_type.upper()
+        if log_type not in ['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL']:
+            raise ValueError('Unknown log log_type: {0}'.format(log_type))
+        self.post_log.append('[{log_type}] {msg}\n'.format(
+            log_type=log_type, msg=msg))
+
+    def is_authentic(self, request, addon):
+        self.log('WARN', 'Using default is_authentic(), failed authentication.')
+        return False
+
+    def write_log(self):
+        """Writes the log to the database."""
+        if getattr(settings, 'ESSENTIAL_ADDONS_DASHBOARD_DEBUG_POST', False):
+            try:
+                PostLog.objects.create(
+                    details="".join(self.post_log),
+                    log_timestamp=now()
+                )
+            except:
+                # We never want the logging to interrupt the reponse back to
+                # the service.
+                warnings.warn('Could not write log!')
+
+    def dispatch(self, request, *args, **kwargs):
+        """Do some header logging."""
+        self.post_log = []
+        self._json_data_cache = None
+        self.log('INFO', 'Received post from {0} @ {1}'.format(
+            self.service_name, now()))
+        for h, v in request.META.iteritems():
+            if h.startswith('HTTP_') or h in [
+                    'CONTENT_LENGTH', 'CONTENT_TYPE', ]:
+                self.log('INFO', 'Found header: {0}:{1}'.format(h, v))
+        return super(WebhookViewBaseView, self).dispatch(
+            request, *args, **kwargs)
+
+    def get_json_data(self, request):
+        """
+        Returns the JSON payload from the request. It is memoised since it may
+        be called more than once, but won't ever change in the same request.
+        """
+        if not self._json_data_cache:
+            payload = request.POST.get(self.payload_name, None)
+            if payload:
+                self._json_data_cache = json.loads(payload) if payload else []
+            else:
+                self._json_data_cache = None
+                self.log('WARN', 'get_json_data() found no data in request.')
+
+        return self._json_data_cache
+
+    def process_data(self, request, data):
+        """Must be implemented"""
+        msg = 'WebhookViews must implement a process_data() method.'
+        self.log('ERROR', msg)
+        raise NotImplementedError(msg)
+
+    def get_addon(self, request, data):
+        """Must be implemented"""
+        msg = 'WebhookViews must implement a get_addon() method.'
+        self.log('ERROR', msg)
+        raise NotImplementedError(msg)
+
+    def post(self, request, *args, **kwargs):
+        """Primary entry point for the service webhook."""
+        addon = self.get_addon(request)
+        if addon:
+            self.log('INFO', 'Found addon: {0}'.format(addon.repo_slug))
+            if not self.is_authentic(request, addon):
+                self.log('WARN', 'Did not authenticate for addon: {0}.'.format(addon))
+                self.write_log()
+                return HttpResponse('', status=401)
+    
+            self.process_data(addon, self.get_json_data(request))
+        else:
+            self.log('WARN', 'No addon found.')
+
+        self.write_log()
+        return HttpResponse('', status=200)
+
+    def get(self, request, *args, **kwargs):
+        """Provides a human-friendly view of the endpoint with instruction."""
+        return TemplateResponse(request,
+            'aldryn_essential_addons_dashboard/url_ok.html', {
+                'service': self.service_name,
+                'webhook_url': request.build_absolute_uri(),
+                'config_example': """
+                    ...
+                    notifications:
+                    webhooks: {0}
+                    ...
+                """.format(request.build_absolute_url)
+            })
+
+
+class HeaderMixinBase(object):
+
+    def format_header(self, header):
+        """
+        Returns a properly formatted header name for Django. Namely, that it is
+        in all caps, uses underscores, not dashes and is prefixed with 'HTTP_'.
+        """
+        new_header = header.upper().replace('-', '_')
+        if not new_header.startswith('HTTP_'):
+            new_header = 'HTTP_' + new_header
+        return new_header
+
+
+class AddonFromHeaderMixin(HeaderMixinBase):
+    addon_slug_header = ''
+    addon_slug_field = 'repo_slug'
+
+    def __init__(self, *args, **kwargs):
+        self.addon_slug_header = self.format_header(self.addon_slug_header)
+        return super(AddonFromHeaderMixin, self).__init__(*args, **kwargs)
+
+    def get_addon(self, request):
+        """Returns the addon that is the target of this notification."""
+        slug = request.META.get(self.addon_slug_header, None)
+        if slug:
+            try:
+                return Addon.objects.get(**{self.addon_slug_field: slug})
+            except Addon.DoesNotExist:
+                self.log('WARN', 'Addon "{0}" not found.'.format(slug))
+                return None
+
+        self.log('WARN', 'Addon_slug_header: {0} not found!'.format(
+            self.addon_slug_header))
+        return None
+
+
+class HeaderAuthenticationMixin(HeaderMixinBase):
+    auth_header = ''
+    addon_auth_digest_field = 'auth_digest'
+
+    def __init__(self, *args, **kwargs):
+        self.auth_header = self.format_header(self.auth_header)
+        return super(HeaderAuthenticationMixin, self).__init__(*args, **kwargs)
+
+    def is_authentic(self, request, addon):
+        """
+        Given the found addon, attempt to authenticate the request. If the
+        addon's auth_digest is currently empty, we'll store one found here and
+        future posts will have to match this one to be accepted.
+        """
+        self.log('DEBUG', 'Is_authentic() is Looking for header: "{0}"'.format(
+            self.auth_header))
+        if addon:
+            auth = request.META.get(self.auth_header, None)
+            if auth:
+                addon_value = getattr(addon, self.addon_auth_digest_field, None)
+                if hasattr(addon, self.addon_auth_digest_field):
+                    if addon_value == auth:
+                        return True
+                else:
+                    # OK, this is the first time we've seen this service, let's
+                    # store the auth code supplied now.
+                    setattr(addon, self.addon_auth_digest_field, auth)
+                    # We're deferring the write until later
+                    self.log(
+                        'WARN',
+                        'Initialized auth-digest on addon: "{0}"'.format(addon)
+                    )
+                    return True
+            else:
+                self.log('WARN', 'Authorization header: "{0}" not found'.format(
+                    self.auth_header))
+        return False
+
+
+class TravisWebhookView(AddonFromHeaderMixin, HeaderAuthenticationMixin, WebhookViewBaseView):
+    service_name = 'TravisCI'
+    payload_name = 'payload'
+    auth_header = 'Authorization'
+    addon_auth_digest_field = 'auth_digest'
+    addon_slug_header = 'Travis-Repo-Slug'
+    addon_slug_field = 'repo_slug'
+
+    def is_authentic(self, request, addon):
+        self.log('WARN', 'Bypassing authentication!')
+        return True
 
     def get_job_python(self, job):
         """
         Given a single 'job' object, return the found Python.
-
         Returns a Version object or None
         """
         if 'config' in job and 'python' in job['config']:
             # json may convert '1.6' into a float, force a string.
-            return Version(str(job['config']['python']), DEFAULT_NUMBER_BITS)
+            return Version(str(job['config']['python']), DEFAULT_BITS)
+        if DEBUG_POST:
+            job_id = job['id'] if 'id' in job else "[No ID found]"
+            self.log('WARN', 'get_job_python() found no config in job: {0}.'.format(job_id))
         return None
 
     def get_python_range(self, matrix):
@@ -68,9 +257,9 @@ class ProcessTravisWebhookView(CsrfExemptMixin, View):
                 job_python = self.get_job_python(job)
                 if job_python:
                     if int(job_python) > int(max_python):
-                        max_python = Version(str(job_python), DEFAULT_NUMBER_BITS)
+                        max_python = Version(str(job_python), DEFAULT_BITS)
                     if int(job_python) < int(min_python):
-                        min_python = Version(str(job_python), DEFAULT_NUMBER_BITS)
+                        min_python = Version(str(job_python), DEFAULT_BITS)
         if max_python == ZERO or min_python == MAX:
             return (None, None)
         return (min_python, max_python)
@@ -82,11 +271,46 @@ class ProcessTravisWebhookView(CsrfExemptMixin, View):
 
         Returns a Version object or None
         """
-        pattern = re.compile('.*?django *= *(?P<version>[0-9][0-9.]*).*?', re.I)
+        job_id = job['id'] if 'id' in job else "[No ID found]"
+        pattern = re.compile('.*?django *=[^\d]*(?P<version>[0-9][0-9.]*).*?', re.I)
         if 'config' in job and job['config'] and 'env' in job['config']:
             match = re.match(pattern, job['config']['env'])
             if match:
-                return Version(match.groups('django')[0], DEFAULT_NUMBER_BITS)
+                ver_num = match.groups('django')[0]
+                ver_obj = None
+
+                try:
+                    ver_num = int(ver_num)
+                    # OK, this is an int, probably something like 14 for 1.4,
+                    # etc. so, let's just multiple by 10 and call it a day.
+                    ver_obj = Version(str(ver_num * 10), DEFAULT_BITS)
+                except:
+                    pass
+
+                if not ver_obj:
+                    # Not an integer, try float
+                    try:
+                        _ = float(ver_num)
+                        # Nice, a float, well, we can use the string version
+                        ver_obj = Version(ver_num, DEFAULT_BITS)
+                    except:
+                        pass
+
+                if not ver_obj:
+                    # Hmmm, not float either...
+                    try:
+                        ver_obj = Version(ver_num, DEFAULT_BITS)
+                    except:
+                        # Can't say we didn't try
+                        self.log('WARN',
+                            'Unable to save django version {0} from '
+                            'job: {1}'.format(ver_num, job_id))
+                        ver_obj = None
+
+                return ver_obj
+
+            self.log('WARN', 'get_job_django() found no config in job: {0}.'.format(job_id))
+
         return None
 
     def get_django_range(self, matrix):
@@ -99,9 +323,9 @@ class ProcessTravisWebhookView(CsrfExemptMixin, View):
                 job_django = self.get_job_django(job)
                 if job_django:
                     if int(job_django) > int(max_django):
-                        max_django = Version(str(job_django), DEFAULT_NUMBER_BITS)
+                        max_django = Version(str(job_django), DEFAULT_BITS)
                     if int(job_django) < int(min_django):
-                        min_django = Version(str(job_django), DEFAULT_NUMBER_BITS)
+                        min_django = Version(str(job_django), DEFAULT_BITS)
         if max_django == ZERO or min_django == MAX:
             return (None, None)
         return (min_django, max_django)
@@ -116,39 +340,42 @@ class ProcessTravisWebhookView(CsrfExemptMixin, View):
                 addon.last_successful_build = right_now
                 addon.min_python_version, addon.max_python_version = self.get_python_range(data['matrix'])
                 addon.min_django_version, addon.max_django_version = self.get_django_range(data['matrix'])
+                self.log('INFO', 'Repo builds!')
             else:
+                self.log('INFO', 'Repo not building.')
                 addon.build_passing = False
             addon.save()
         return
 
-    def post(self, request, *args, **kwargs):
-        # TODO: See: http://docs.travis-ci.com/user/notifications/#Authorization-for-Webhooks
-        # Too bad the docs provide the wrong headers!
-        slug = request.META.get('HTTP_TRAVIS_REPO_SLUG', None)
-        auth = request.META.get('HTTP_AUTHORIZATION', None),
-        addon = None
-        try:
-            # We'll also match those with an empty auth_digest, and if found,
-            # we'll populate it with what Travis supplies. This should only
-            # happen the first time the webhook fires and only if we haven't
-            # already set the token ourselves.
-            addon = Addon.objects.get(
-                Q(auth_digest=auth) | Q(auth_digest='') | Q(auth_digest__isnull=True),
-                repo_slug=slug
-            )
 
-            # See note above
-            if not addon.auth_digest:
-                addon.auth_digest = auth    # Save deferred
+class GitHubWebhookView(AddonFromHeaderMixin, HeaderAuthenticationMixin, WebhookViewBaseView):
+    service_name = 'GitHub'
+    payload_name = 'payload'
+    addon_slug_field = 'repo_slug'
 
-        except Addon.DoesNotExist:
-            pass
+    def is_authentic(self, request, addon):
+        self.log('WARN', 'Bypassing authentication!')
+        return True
 
-        self.process_data(addon, self.get_data(request))
+    def get_repo(self, request):
+        data = self.get_json_data(request)
+        if 'repository' in data and 'full_name' in data['repository']:
+            return data['repository']['full_name']
 
-        return HttpResponse(status=200)
-
-    def get(self, request, *args, **kwargs):
-        """Just for easier testing."""
-        return TemplateResponse(request,
-            'aldryn_essential_addons_dashboard/url_ok.html', {})
+    def process_data(self, addon, data):
+        right_now = now()
+        if addon and data:
+            if 'release' in data:
+                tag_name = data['release']['tag_name']
+                try:
+                    addon.version = Version(tag_name)
+                except:
+                    self.log(
+                        'ERROR',
+                        'Unable to determine version from tag_name'.format(
+                            tag_name)
+                    )
+                addon.last_webhook_timestamp = right_now
+                self.log('INFO', 'Got version: {0} from GitHub!'.format())
+            else:
+                self.log('WARN', 'Unknown event type from GitHub')
