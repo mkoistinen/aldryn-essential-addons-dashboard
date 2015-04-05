@@ -7,7 +7,6 @@ import re
 import warnings
 
 from django.conf import settings
-from django.db.models import Q
 from django.http import HttpResponse
 from django.template.response import TemplateResponse
 from django.utils.decorators import method_decorator
@@ -283,8 +282,8 @@ class TravisWebhookView(AddonFromHeaderMixin, HeaderAuthenticationMixin, Webhook
                 try:
                     ver_num = int(ver_num)
                     # OK, this is an int, probably something like 14 for 1.4,
-                    # etc. so, let's just multiple by 10 and call it a day.
-                    ver_obj = Version(str(ver_num * 10), DEFAULT_BITS)
+                    # etc. so, let's just divide by 10 and call it a day.
+                    ver_obj = Version(str(ver_num / 10), DEFAULT_BITS)
                 except:
                     pass
 
@@ -361,10 +360,14 @@ class GitHubWebhookView(HeaderAuthenticationMixin, WebhookViewBaseView):
     def get_addon(self, request):
         data = self.get_json_data(request)
         if data and 'repository' in data and 'full_name' in data['repository']:
-            addon = data['repository']['full_name']
-            self.log('INFO', 'Found addon: {0} in data!'.format(addon))
-            return addon
-        self.log('WARN', 'Unable to find addon in data.')
+            slug = data['repository']['full_name']
+            self.log('INFO', 'Found addon: {0} in data!'.format(slug))
+            try:
+                return Addon.objects.get(repo_slug=slug)
+            except Addon.DoesNotExist:
+                self.log('WARN', 'Addon "{0}" not found.'.format(slug))
+                return None
+        self.log('WARN', 'Unable to find addon slug in data.')
         return None
 
     def process_data(self, addon, data):
@@ -374,7 +377,7 @@ class GitHubWebhookView(HeaderAuthenticationMixin, WebhookViewBaseView):
                     data['ref_type'] == 'tag' and 'ref' in data):
                 tag_name = data['ref']
                 try:
-                    addon.version = Version(tag_name)
+                    addon.version = Version(tag_name, DEFAULT_BITS)
                 except:
                     self.log(
                         'ERROR',
@@ -382,6 +385,7 @@ class GitHubWebhookView(HeaderAuthenticationMixin, WebhookViewBaseView):
                             tag_name)
                     )
                 addon.last_webhook_timestamp = right_now
-                self.log('INFO', 'Got version: {0} from GitHub!'.format())
+                self.log('INFO', 'Got version: {0}'.format(tag_name))
             else:
                 self.log('WARN', 'Unknown event type from GitHub')
+            addon.save()
