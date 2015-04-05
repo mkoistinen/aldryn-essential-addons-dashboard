@@ -349,7 +349,7 @@ class TravisWebhookView(AddonFromHeaderMixin, HeaderAuthenticationMixin, Webhook
         return
 
 
-class GitHubWebhookView(AddonFromHeaderMixin, HeaderAuthenticationMixin, WebhookViewBaseView):
+class GitHubWebhookView(HeaderAuthenticationMixin, WebhookViewBaseView):
     service_name = 'GitHub'
     payload_name = 'payload'
     addon_slug_field = 'repo_slug'
@@ -358,10 +358,14 @@ class GitHubWebhookView(AddonFromHeaderMixin, HeaderAuthenticationMixin, Webhook
         self.log('WARN', 'Bypassing authentication!')
         return True
 
-    def get_repo(self, request):
+    def get_addon(self, request):
         data = self.get_json_data(request)
-        if 'repository' in data and 'full_name' in data['repository']:
-            return data['repository']['full_name']
+        if data and 'repository' in data and 'full_name' in data['repository']:
+            addon = data['repository']['full_name']
+            self.log('INFO', 'Found addon: {0} in data!'.format(addon))
+            return addon
+        self.log('WARN', 'Unable to find addon in data.')
+        return None
 
     def process_data(self, addon, data):
         right_now = now()
